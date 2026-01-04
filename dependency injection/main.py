@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from typing import Dict
 
@@ -44,3 +44,31 @@ def get_user(token: str = Depends(get_token)):
 @app.get("/users/me")
 def get_current_user(user: Dict = Depends(get_user)):
     return user
+
+
+# Dependency using classes
+class PageParams:
+    def __init__(self, page: int = 1, size: int = 20):
+        self.page = page
+        self.size = size
+
+
+@app.get("/catalogue")
+def get_catalogue(params: PageParams = Depends(PageParams)):
+    return {
+        "current_page": params.page,
+        "page_size": params.size,
+    }
+
+
+# Local dependency
+def verify_key(key: str):
+    if key != "secret-password":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong key")
+
+    return None
+
+
+@app.get("/secure-data")
+def get_secure_data(key: HTTPException | None = Depends(verify_key)):
+    return {"message": "Access granted"}
